@@ -6,7 +6,18 @@ def on_connect(client, userdata, flags, rc):
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("sensor")
+
+    client.subscribe("door/gyro")
+    client.subscribe("door/imu")
+    client.subscribe("door/contact")
+
+    client.subscribe("room/lux")
+    client.subscribe("room/pir")
+    client.subscribe("room/range")
+
+    client.subscribe("box/accel")
+    client.subscribe("box/contact")
+    client.subscribe("box/range")
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
