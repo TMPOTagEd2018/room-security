@@ -1,32 +1,25 @@
-import socket
-import _thread
 import paho.mqtt.client as mqtt
 
-HOST = '192.168.4.1'
-PORT = 8000
-SERVER = (HOST, PORT)
+# The callback for when the client receives a CONNACK response from the server.
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code "+str(rc))
 
+    # Subscribing in on_connect() means that if we lose the connection and
+    # reconnect then subscriptions will be renewed.
+    client.subscribe("sensor")
 
-def handler(client, addr):
-    while True:
-        msg = client.recv(1024).decode()
-        if not msg:
-            break
-        print(msg)
-        client.send(msg.encode())
-    client.close()
+# The callback for when a PUBLISH message is received from the server.
+def on_message(client, userdata, msg):
+    print(msg.topic+" "+str(msg.payload))
 
+client = mqtt.Client()
+client.on_connect = on_connect
+client.on_message = on_message
 
-s = socket.socket()
+client.connect("10.90.12.213", 1883, 60)
 
-print("Starting server...")
-print("Waiting for clients")
-
-s.bind(SERVER)
-s.listen(64)
-
-while True:
-    conn, addr = s.accept()
-    print(f"New client connected: {addr}")
-    _thread.start_new_thread(handler, (conn, addr))
-s.close()
+# Blocking call that processes network traffic, dispatches callbacks and
+# handles reconnecting.
+# Other loop*() functions are available that give a threaded interface and a
+# manual interface.
+client.loop_forever()
