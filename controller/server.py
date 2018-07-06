@@ -6,6 +6,8 @@ import monitor
 import monitor.gyro
 import monitor.heartbeat
 
+import keyex
+
 from processor import ThreatProcessor
 
 from rx import Observable
@@ -37,21 +39,27 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("door/imu")
     client.subscribe("door/contact")
     client.subscribe("door/heartbeat")
+    client.subscribe("door/key")
 
     client.subscribe("room/lux")
     client.subscribe("room/pir")
     client.subscribe("room/range")
     client.subscribe("room/heartbeat")
+    client.subscribe("room/key")
 
     client.subscribe("box/gyro")
     client.subscribe("box/contact")
     client.subscribe("box/range")
     client.subscribe("box/heartbeat")
+    client.subscribe("box/key")
 
 # The callback for when a PUBLISH message is received from the server.
-def on_message(client, userdata, msg):
-    e = msg.payload.decode()
-    monitors[msg.topic].input(e)
+def on_message(client, userdata, msg: mqtt.MQTTMessage):
+    if msg.topic.endswith("/key"):
+        they_pk = msg.payload.decode()
+
+    else:
+        monitors[msg.topic].input(msg.payload.decode())
         
 client = mqtt.Client()
 client.on_connect = on_connect
