@@ -4,6 +4,7 @@ import paho.mqtt.client as mqtt
 
 import monitor
 import monitor.gyro
+import monitor.heartbeat
 
 from processor import ThreatProcessor
 
@@ -12,7 +13,8 @@ from rx import Observable
 from typing import Dict
 
 monitors: Dict[str, monitor.Monitor]  = {
-    "door/gyro": monitor.gyro.GyroMonitor()
+    "door/gyro": monitor.gyro.GyroMonitor(),
+    "door/heartbeat": monitor.heartbeat.HeartbeatMonitor()
 }
 
 threats = Observable.merge(*map(lambda m: m.threats, monitors.values()))
@@ -29,14 +31,17 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("door/gyro")
     client.subscribe("door/imu")
     client.subscribe("door/contact")
+    client.subscribe("door/heartbeat")
 
     client.subscribe("room/lux")
     client.subscribe("room/pir")
     client.subscribe("room/range")
+    client.subscribe("room/heartbeat")
 
     client.subscribe("box/accel")
     client.subscribe("box/contact")
     client.subscribe("box/range")
+    client.subscribe("box/heartbeat")
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):

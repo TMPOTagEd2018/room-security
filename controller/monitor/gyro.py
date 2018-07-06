@@ -20,22 +20,22 @@ class GyroMonitor(Monitor):
         self.data.on_next(value)
 
     def handler(self, buffer: [int]):
-            # the sensor reports degrees/s
+        # the sensor reports degrees/s
 
-            # observe the last 10 values and check if the box is rotating quickly
+        # observe the last 10 values and check if the box is rotating quickly
 
-            m = np.max(buffer)
+        m = np.max(buffer)
 
-            # the box should be stationary and the gyro shouldn't be jittering more
-            # than ±2 degrees
+        # the box should be stationary and the gyro shouldn't be jittering more
+        # than ±2 degrees
 
-            if m > 20:
-                self.threats.on_next(3)
-            elif m > 10:
-                self.threats.on_next(2)
-            elif m > 1:
-                self.threats.on_next(1)
-            else:
-                self.threats.on_next(0)
+        if m > 20:
+            self.threats.on_next(3)
+        elif m > 10:
+            self.threats.on_next(2)
+        elif m > 1:
+            self.threats.on_next(1)
+        else:
+            self.threats.on_next(0)
 
             

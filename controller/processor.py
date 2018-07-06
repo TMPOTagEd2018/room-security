@@ -17,6 +17,11 @@ class ThreatProcessor:
         self.subscription = self.query.subscribe(self.on_threat)
 
     def on_threat(self, buffer: [int]):
+        if -1 in buffer:
+            prev_score = 0
+            buffer = [0]
+            print(f"[{dt.now()}] Threat level has been reset.")
+
         threat_score = (np.sum(buffer) + np.max(buffer)) / (np.std(buffer) + 1) / self.sensitivity * 2
 
         if threat_score > 3:
@@ -27,6 +32,6 @@ class ThreatProcessor:
             print(cr.Fore.YELLOW + f"[{dt.now()}] Threat level 1: potential activity detected.")
 
         if self.prev_score > threat_score and threat_score <= 1:
-            print("Threat level 0: returned to normal.")
+            print(f"[{dt.now()}] Threat level 0: returned to normal.")
 
         self.prev_score = threat_score
