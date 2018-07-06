@@ -56,13 +56,13 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("box/key")
 
 keys = {}
+dh = keyex.DiffieHellman()
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client: mqtt.Client, userdata, msg: mqtt.MQTTMessage):
     node_name, sensor_name = path.split(msg.topic)
 
     if sensor_name == "key":
-        dh = keyex.DiffieHellman()
         they_pk = msg.payload.decode()
 
         client.publish(msg.topic, payload=dh.gen_public_key(), qos=1)
