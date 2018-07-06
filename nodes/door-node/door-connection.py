@@ -1,5 +1,5 @@
 from smbus import SMBus
-import paho.mqtt as mqtt
+import paho.mqtt.publish as p_mqtt
 import socket
 import time
 
@@ -18,5 +18,5 @@ def recv():
 while True:
     ac = recv()
     print(ac)
-    mqtt.publish.single("door/gyro", str(ac), qos=1, hostname=HOST, port=PORT)
+    p_mqtt.single("door/gyro", str(ac), qos=1, hostname=HOST, port=PORT)
     time.sleep(1)
