@@ -19,12 +19,12 @@ class GyroMonitor(Monitor):
     def input(self, value):
         self.data.on_next(value)
 
-    def handler(self, window):
+    def handler(self, buffer: [int]):
             # the sensor reports degrees/s
 
             # observe the last 10 values and check if the box is rotating quickly
 
-            m = np.max(window)
+            m = np.max(buffer)
 
             # the box should be stationary and the gyro shouldn't be jittering more
             # than ±2 degrees

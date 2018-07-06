@@ -1,3 +1,10 @@
 {
-    "python.pythonPath": "C:\\Users\\iabiodun3\\AppData\\Local\\Programs\\Python\\Python36\\python.exe"
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/__pycache__": true
+    }    
 }

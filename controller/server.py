@@ -5,9 +5,19 @@ import paho.mqtt.client as mqtt
 import monitor
 import monitor.gyro
 
+from processor import ThreatProcessor
+
 from rx import Observable
 
 from typing import Dict
+
+monitors: Dict[str, monitor.Monitor]  = {
+    "door/gyro": monitor.gyro.GyroMonitor()
+}
+
+threats = Observable.merge(*map(lambda m: m.threats, monitors.values()))
+
+processor = ThreatProcessor(threats, 5)
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -28,20 +38,11 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("box/contact")
     client.subscribe("box/range")
 
-monitors: Dict[str, monitor.Monitor]  = {
-    "door/gyro": monitor.gyro.GyroMonitor()
-}
-
-threats = Observable.merge(*map(lambda m: m.threats, monitors.values()))
-
-threats.subscribe(lambda x: print(f"threat level is now {x}"))
-
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     e = msg.payload.decode()
     monitors[msg.topic].input(e)
         
-
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message

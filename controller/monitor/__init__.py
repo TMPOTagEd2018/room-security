@@ -5,3 +5,8 @@ class Monitor:
     query: Disposable
     data: Subject = Subject()
     threats: Subject = Subject()
+
+    
+    def dispose(self):
+        if self.query is not None:
+            self.query.dispose()
