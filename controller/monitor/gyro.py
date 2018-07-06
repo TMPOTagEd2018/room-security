@@ -8,8 +8,10 @@ import numpy as np
 from . import Monitor
 
 class GyroMonitor(Monitor):
-    def __init__(self):
+    def __init__(self, sensitivity = 1):
         super().__init__()
+
+        self.sensitivity = sensitivity
 
         self.query = self.data \
             .map(int) \
@@ -30,11 +32,11 @@ class GyroMonitor(Monitor):
         # than ±2 degrees
 
         if m > 20:
-            self.threats.on_next(3)
+            self.threats.on_next(3 * self.sensitivity)
         elif m > 10:
-            self.threats.on_next(2)
+            self.threats.on_next(2 * self.sensitivity)
         elif m > 1:
-            self.threats.on_next(1)
+            self.threats.on_next(1 * self.sensitivity)
         else:
             self.threats.on_next(0)
 

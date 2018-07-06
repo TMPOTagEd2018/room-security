@@ -10,28 +10,26 @@ import numpy as np
 
 from . import Monitor
 
-class HeartbeatMonitor(Monitor):
-    timer1: Timer
-    timer2: Timer
-    timer3: Timer
 
-    def __init__(self):
+class HeartbeatMonitor(Monitor):
+    level = 0
+    timer: Timer
+
+    def __init__(self, sensitivity = 1):
         super().__init__()
-        timer1 = None
-        timer2 = None
-        timer3 = None
+        self.timer = Timer(3, self.handler)
+        self.sensitivity = sensitivity
 
     def input(self, value):
         self.threats.on_next(0)
+        self.reset()
 
-        timer1.cancel()
-        timer2.cancel()
-        timer3.cancel()
+    def handler(self):
+        self.level = min(self.level + 1, 3)
+        self.threats.on_next(self.level * self.sensitivity)
+        self.reset()
 
-        timer1 = Timer(3, lambda _: self.threats.on_next(1))
-        timer2 = Timer(7, lambda _: self.threats.on_next(2))
-        timer3 = Timer(10, lambda _: self.threats.on_next(3))
-
-            
-
-            
+    def reset(self):
+        self.timer.cancel()
+        self.timer = Timer(3, self.handler)
+        self.timer.start()

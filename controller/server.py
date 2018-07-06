@@ -13,13 +13,18 @@ from rx import Observable
 from typing import Dict
 
 monitors: Dict[str, monitor.Monitor]  = {
-    "door/gyro": monitor.gyro.GyroMonitor(),
-    "door/heartbeat": monitor.heartbeat.HeartbeatMonitor()
+    "door/gyro": monitor.gyro.GyroMonitor(1),
+    "box/gyro": monitor.gyro.GyroMonitor(2),
+    "door/heartbeat": monitor.heartbeat.HeartbeatMonitor(1),
+    "room/heartbeat": monitor.heartbeat.HeartbeatMonitor(2),
+    "box/heartbeat": monitor.heartbeat.HeartbeatMonitor(3)
 }
 
 threats = Observable.merge(*map(lambda m: m.threats, monitors.values()))
 
 processor = ThreatProcessor(threats, 5)
+
+monitors["door/heartbeat"].input(0)
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -38,7 +43,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("room/range")
     client.subscribe("room/heartbeat")
 
-    client.subscribe("box/accel")
+    client.subscribe("box/gyro")
     client.subscribe("box/contact")
     client.subscribe("box/range")
     client.subscribe("box/heartbeat")
