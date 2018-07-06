@@ -13,7 +13,7 @@ LSM9DS1 imu;
 
 const int in = 13;
 
-int openned = 0;
+int opened = 0;
 int ang = 0;
 
 void setup() {
@@ -56,9 +56,9 @@ void loop() {
   Serial.print("Gyro: ");
   Serial.println(ang);
 
-  openned = (digitalRead(in)) ? 1 : 0;
-  Serial.print("Openned: ");
-  Serial.println(openned);
+  opened = (digitalRead(in)) ? 1 : 0;
+  Serial.print("Opened: ");
+  Serial.println(opened);
   
   delay(DT);
 }
