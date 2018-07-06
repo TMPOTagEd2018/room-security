@@ -8,6 +8,8 @@ import monitor.heartbeat
 
 import keyex
 
+import os.path as path
+
 from processor import ThreatProcessor
 
 from rx import Observable
@@ -53,12 +55,24 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("box/heartbeat")
     client.subscribe("box/key")
 
+keys = {}
+
 # The callback for when a PUBLISH message is received from the server.
-def on_message(client, userdata, msg: mqtt.MQTTMessage):
-    if msg.topic.endswith("/key"):
+def on_message(client: mqtt.Client, userdata, msg: mqtt.MQTTMessage):
+    node_name, sensor_name = path.split(msg.topic)
+
+    if sensor_name == "key":
+        dh = keyex.DiffieHellman()
         they_pk = msg.payload.decode()
 
+        client.publish(msg.topic, payload=dh.gen_public_key(), qos=1)
+
+        sk = dh.gen_shared_key(they_pk)
+        seed = int(sk, 16)
+
+        keys[node_name] = sk
     else:
+        # TODO: encode msg.payload using keys[node_name]
         monitors[msg.topic].input(msg.payload.decode())
         
 client = mqtt.Client()
