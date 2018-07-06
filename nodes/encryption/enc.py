@@ -2,11 +2,9 @@ from Crypto.Cipher import AES
 import base64
 import os
 import glob
-# filename = raw_input("Filename:")
-path = '/Users/dev/Desktop/testfiles/'
 
 
-
+path = ""
 
 for filename in glob.iglob(path + '**/*', recursive=True):
     print(filename)
