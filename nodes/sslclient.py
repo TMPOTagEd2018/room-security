@@ -7,8 +7,8 @@ import time
 
 broker = "Taged"
 #broker is the mothernode
-#it should have server.crt
-#idk how it's gonna recognize based on the certs
+
+
 
 
 HOST = '192.168.4.1'
