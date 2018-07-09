@@ -51,13 +51,15 @@ void loop(){
   sensors_event_t event;
   tsl.getEvent(&event);
 
-  lux = (int) event.light;
+  lux = constrain((int) event.light, 0, 255);
+  move = (digitalRead(in)) ? 1 : 0;
+
+  /*
   Serial.print("Lux: ");
   Serial.println(lux);
-
-  move = (digitalRead(in)) ? 1 : 0;
   Serial.print("PIR: ");
   Serial.println(move);
+  */
   delay(DT);
 }
 
@@ -67,6 +69,7 @@ void recv(int i){
 }
 
 void send(){
+  Wire.write(move);
   Wire.write(lux);
 }
 

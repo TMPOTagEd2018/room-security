@@ -3,7 +3,7 @@
 #include <Adafruit_MMA8451.h>
 
 #define ADDR 0x06
-#define DT 100
+#define DT 250
 
 Adafruit_MMA8451 mma = Adafruit_MMA8451();
 
@@ -44,12 +44,21 @@ void loop(){
   mma.getEvent(&e);
 
   accel = sqrt(pow(e.acceleration.x, 2) + pow(e.acceleration.y, 2) + pow(e.acceleration.z, 2)) - 9;
-  Serial.print("Acceleration: ");
-  Serial.println(accel);
-
   opened = (digitalRead(in)) ? 1 : 0;
+
+  accel = constrain(accel, -127, 127);
+
+  Serial.print("Acceleration: ");
+  Serial.print(accel);
+  Serial.print(", ");
+  if(byte(accel) > 128){
+    Serial.println((byte)accel - 256);
+  } else {
+    Serial.println(byte(accel));
+  }
   Serial.print("Opened: ");
   Serial.println(opened);
+  
   delay(DT);
 }
 
@@ -59,6 +68,7 @@ void recv(int){
 }
 
 void send(){
+  Wire.write(opened);
   Wire.write(accel);
 }
 
