@@ -53,10 +53,10 @@ void loop() {
   }
 
   ang = constrain(imu.calcGyro(imu.gy), -127, 127);
+  opened = (digitalRead(in)) ? 1 : 0;
+
   Serial.print("Gyro: ");
   Serial.println(ang);
-
-  opened = (digitalRead(in)) ? 1 : 0;
   Serial.print("Opened: ");
   Serial.println(opened);
   
@@ -69,7 +69,7 @@ void recv(int){
 }
 
 void send(){
-  //Wire.write(0x00 << 1);
+  Wire.write(0x01);
   Wire.write(ang);
   //Wire.write(openned);
 }
