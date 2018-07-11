@@ -8,6 +8,7 @@ Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 1234
 #define DT 100
 
 const int in = 2;
+const uint8_t mic = A0;
 
 int lux = 0;
 int move = 0;
@@ -24,6 +25,7 @@ void setup(){
   Wire.onRequest(send);
 
   pinMode(in, INPUT);
+  pinMode(mic, INPUT);
 
   if(!tsl.begin()){
     Serial.println("No lux sensor found");
@@ -53,6 +55,9 @@ void loop(){
 
   lux = constrain((int) event.light, 0, 255);
   move = (digitalRead(in)) ? 1 : 0;
+
+  int test = analogRead(mic);
+  Serial.println(test);
 
   /*
   Serial.print("Lux: ");

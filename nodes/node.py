@@ -4,11 +4,6 @@ import paho.mqtt.subscribe as sub
 from smbus import SMBus
 import time
 
-bus = SMBus(1)
-
-HOST = '192.168.4.1'
-PORT = 1883
-
 class Sensor:
 
     def __init__(self, n, p, f):
@@ -16,12 +11,25 @@ class Sensor:
         self.place = p
         self.function = f
 
+class Input:
+
+    def __init__(self, n, t, f):
+        self.name = n
+        self.topic = t
+        self.function = f
+
 class Node:
+    inputs = []
     sensors = []
 
     def __init__(self, name, addr):
         self.name = name
         self.ADDR = addr
+        self.bus = SMBus(1)
+        self.HOST = '192.168.4.1'
+        self.PORT = 1883
+
+
 
     '''
     def exchange(self):
@@ -38,12 +46,20 @@ class Node:
     def register(self, sensor, place, transform):
         self.sensors.append(Sensor(sensor, place, transform))
 
-    def send(self):
+    def pipe(self, name, topic, pipeline):
+        self.inputs.append(Input(name, topic, pipeline))
+
+    def start(self):
         while True:
-            d = bus.read_i2c_block_data(self.ADDR, 2)
+            d = self.bus.read_i2c_block_data(self.ADDR, 2)
+            for i in self.inputs:
+                r = sub.simple(i.name + "/" + i.topic, qos=1, hostname=self.HOST, port=self.PORT)
+                i.function(r)
+                print("Recieved: ", bytes(r.payload))
             for s in self.sensors:
                 data = s.function(d[s.place])
-                print(s.name, data)
-                pub.single(self.name + "/" + s.name, data, qos=1, hostname=HOST, port=PORT)
+                #print(s.name, data)
+                print((self.name + "/" + s.name), data)
+                pub.single(self.name + "/" + s.name, data, qos=1, hostname=self.HOST, port=self.PORT)
                 time.sleep(.25)
  

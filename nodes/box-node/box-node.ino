@@ -7,7 +7,10 @@
 
 Adafruit_MMA8451 mma = Adafruit_MMA8451();
 
+const int buzzer = 2;
 const int in = 13;
+
+int buzzing = -1;
 int opened = 0;
 int accel = 0;
 
@@ -15,7 +18,7 @@ void setup(void){
   Serial.begin(115200);
   delay(2000);
   Serial.println();
-  Serial.println("Starting box nodes");
+  Serial.println("Starting box node");
 
   Wire.begin(ADDR);
   Wire.onReceive(recv);
@@ -33,6 +36,7 @@ void setup(void){
   Serial.println("G");
 
   pinMode(in, INPUT);
+  pinMode(buzzer, OUTPUT);
 
   Serial.print("I2c opening on addr: ");
   Serial.println(ADDR);
@@ -48,6 +52,7 @@ void loop(){
 
   accel = constrain(accel, -127, 127);
 
+  /*
   Serial.print("Acceleration: ");
   Serial.print(accel);
   Serial.print(", ");
@@ -58,13 +63,27 @@ void loop(){
   }
   Serial.print("Opened: ");
   Serial.println(opened);
+  */
+
+  if(buzzing == 1){
+    tone(buzzer, 1000);
+  } else {
+    noTone(buzzer);
+  }
   
   delay(DT);
 }
 
 void recv(int){
   byte r = Wire.read();
-  Serial.println(r);
+  if(r == 1){
+    buzzing = 1;
+    Serial.println("BUZZING");
+  } 
+  if(r == 0){
+    if(buzzing == 1){ Serial.println("STOPPED BUZZING"); }
+    buzzing = false;
+  }
 }
 
 void send(){
