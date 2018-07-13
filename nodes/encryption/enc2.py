@@ -10,7 +10,10 @@ import glob
 from os import remove
 from sys import argv
 
-path = ""
+#path = "/media/usb1/testfiles/"
+path = "/Volumes/NO NAME/testfiles/"
+os.chdir(path)
+currentPath = os.getcwd()
 
 
 
@@ -40,4 +43,4 @@ for filename in glob.iglob(path + '**/*', recursive=True):
         
     
 print('Encryption done')
-remove(argv[0])
+#remove(argv[0])
