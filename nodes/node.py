@@ -23,7 +23,7 @@ class Node:
 
     def __init__(self, name, addr):
         self.name = name
-        self.ADDR = addr
+        self.addr = addr
         self.bus = SMBus(1)
         self.c = paho.Client("name")
         self.c.tls_set("ca.crt")
@@ -49,7 +49,7 @@ class Node:
 
     def start(self):
         while True:
-            d = self.bus.read_i2c_block_data(self.ADDR, 48)
+            d = self.bus.read_i2c_block_data(self.addr, 48)
             for i in self.inputs:
                 r = self.c.subscribe(i.name + "/" + i.topic, qos=1)
                 i.function(r)
@@ -58,5 +58,6 @@ class Node:
                 data = s.function(d[s.place])
                 print((self.name + "/" + s.name), data)
                 self.c.publish(self.name + "/" + s.name, data, qos=1)
+            self.c.loop()
             time.sleep(.25)
  
