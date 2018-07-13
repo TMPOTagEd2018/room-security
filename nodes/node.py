@@ -1,6 +1,9 @@
 import keyex
+import random
+
 import paho.mqtt.client as paho
 from smbus import SMBus
+
 import time
 
 class Sensor:
@@ -29,7 +32,6 @@ class Node:
         self.c.tls_set("ca.crt")
         self.c.connect("192.168.4.1", 8883)
 
-    '''
     def exchange(self):
         dh = keyex.DiffieHellman()
 
@@ -38,8 +40,8 @@ class Node:
         they_pk = sub.simple(f"{self.name}/key", hostname=HOST, port=PORT)
 
         sk = dh.gen_shared_key(they_pk)
-        self.seed = int(sk, 16)
-    '''
+        random.seed(int(sk, 16))
+        self.rng = random.getstate()
 
     def register(self, sensor, place, transform):
         self.sensors.append(Sensor(sensor, place, transform))
@@ -48,6 +50,10 @@ class Node:
         self.inputs.append(Input(name, topic, pipeline))
 
     def start(self):
+        counter = 0
+
+        self.exchange()
+
         while True:
             d = self.bus.read_i2c_block_data(self.addr, 48)
             for i in self.inputs:
@@ -60,4 +66,11 @@ class Node:
                 self.c.publish(self.name + "/" + s.name, data, qos=1)
             self.c.loop()
             time.sleep(.25)
+
+            counter = counter + 1
+            if counter == 20:
+                random.setstate(self.rng)
+                self.c.publish(f"{self.name}/heartbeat", random.getrandbits(32), qos=2)
+                self.rng = random.getstate()
+                counter = 0
  
