@@ -52,7 +52,6 @@ void loop(){
 
   accel = constrain(accel, -127, 127);
 
-  /*
   Serial.print("Acceleration: ");
   Serial.print(accel);
   Serial.print(", ");
@@ -63,7 +62,6 @@ void loop(){
   }
   Serial.print("Opened: ");
   Serial.println(opened);
-  */
 
   if(buzzing == 1){
     tone(buzzer, 1000);

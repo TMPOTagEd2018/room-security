@@ -1,6 +1,5 @@
-#import keyex
-import paho.mqtt.publish as pub
-import paho.mqtt.subscribe as sub
+import keyex
+import paho.mqtt.client as paho
 from smbus import SMBus
 import time
 
@@ -26,10 +25,9 @@ class Node:
         self.name = name
         self.ADDR = addr
         self.bus = SMBus(1)
-        self.HOST = '192.168.4.1'
-        self.PORT = 1883
-
-
+        self.c = paho.Client("name")
+        self.c.tls_set("ca.crt")
+        self.c.connect("192.168.4.1", 8883)
 
     '''
     def exchange(self):
@@ -51,15 +49,14 @@ class Node:
 
     def start(self):
         while True:
-            d = self.bus.read_i2c_block_data(self.ADDR, 2)
+            d = self.bus.read_i2c_block_data(self.ADDR, 48)
             for i in self.inputs:
-                r = sub.simple(i.name + "/" + i.topic, qos=1, hostname=self.HOST, port=self.PORT)
+                r = self.c.subscribe(i.name + "/" + i.topic, qos=1)
                 i.function(r)
                 print("Recieved: ", bytes(r.payload))
             for s in self.sensors:
                 data = s.function(d[s.place])
-                #print(s.name, data)
                 print((self.name + "/" + s.name), data)
-                pub.single(self.name + "/" + s.name, data, qos=1, hostname=self.HOST, port=self.PORT)
-                time.sleep(.25)
+                self.c.publish(self.name + "/" + s.name, data, qos=1)
+            time.sleep(.25)
  
