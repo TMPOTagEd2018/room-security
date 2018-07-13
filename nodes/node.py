@@ -6,19 +6,20 @@ from smbus import SMBus
 
 import time
 
-class Sensor:
 
+class Sensor:
     def __init__(self, n, p, f):
         self.name = n
         self.place = p
         self.function = f
 
-class Input:
 
+class Input:
     def __init__(self, n, t, f):
         self.name = n
         self.topic = t
         self.function = f
+
 
 class Node:
     inputs = []
@@ -36,8 +37,20 @@ class Node:
         dh = keyex.DiffieHellman()
 
         my_pk = dh.gen_public_key()
-        pub.single(f"{self.name}/key", payload=my_pk, qos=1, hostname=HOST, port=PORT)
-        they_pk = sub.simple(f"{self.name}/key", hostname=HOST, port=PORT)
+        they_pk = None
+
+        def handler(client, data, flags, rc):
+            global they_pk
+            they_pk = data.decode()
+
+        self.c.subscribe(f"{self.name}/key")
+        self.c.on_message = handler
+        self.c.publish(f"{self.name}/key", payload=my_pk, qos=1)
+
+        while they_pk is None:
+            time.sleep(0.25)
+
+        self.c.on_message = None
 
         sk = dh.gen_shared_key(they_pk)
         random.seed(int(sk, 16))
@@ -70,7 +83,7 @@ class Node:
             counter = counter + 1
             if counter == 20:
                 random.setstate(self.rng)
-                self.c.publish(f"{self.name}/heartbeat", random.getrandbits(32), qos=2)
+                self.c.publish(f"{self.name}/heartbeat",
+                               random.getrandbits(32), qos=2)
                 self.rng = random.getstate()
                 counter = 0
- 
