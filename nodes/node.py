@@ -1,10 +1,9 @@
 import keyex
 import random
+import time
 
 import paho.mqtt.client as paho
-from smbus import SMBus
-
-import time
+from smbus2 import SMBus
 
 
 class Sensor:
@@ -28,33 +27,55 @@ class Node:
     def __init__(self, name, addr):
         self.name = name
         self.addr = addr
-        self.bus = SMBus(1)
+        # self.bus = SMBus(1)
         self.c = paho.Client("name")
         self.c.tls_set("ca.crt")
         self.c.connect("192.168.4.1", 8883)
 
     def exchange(self):
+        print("Initiating key exchange.")
+
         dh = keyex.DiffieHellman()
 
-        my_pk = dh.gen_public_key()
-        they_pk = None
+        public_key = dh.gen_public_key()
+        server_public_key = None
 
-        def handler(client, data, flags, rc):
-            global they_pk
-            they_pk = data.decode()
+        def handler(client, data, message: paho.MQTTMessage):
+            nonlocal server_public_key
+            server_public_key = message.payload.decode()
 
-        self.c.subscribe(f"{self.name}/key")
         self.c.on_message = handler
-        self.c.publish(f"{self.name}/key", payload=my_pk, qos=1)
+        self.c.subscribe("server/key")
+        self.c.publish(f"{self.name}/key", payload=public_key, qos=1)
 
-        while they_pk is None:
-            time.sleep(0.25)
+        print(f"Sent my public key: {public_key}")
+        print("Waiting for their public key...")
+
+        start_time = time.time()
+
+        while server_public_key is None:
+            self.c.loop()
+
+            if time.time() - start_time >= 30:
+                print("Key exchange timed out.")
+                return False
+
+        server_public_key = int(server_public_key)
+
+        print(f"Received server public key: {server_public_key}")
 
         self.c.on_message = None
+        self.c.unsubscribe("server/key")
 
-        sk = dh.gen_shared_key(they_pk)
+        sk = dh.gen_shared_key(server_public_key)
+
+        print(f"Key exchange completed with server, shared key {sk}")
+
         random.seed(int(sk, 16))
+
         self.rng = random.getstate()
+
+        return True
 
     def register(self, sensor, place, transform):
         self.sensors.append(Sensor(sensor, place, transform))
@@ -65,7 +86,10 @@ class Node:
     def start(self):
         counter = 0
 
-        self.exchange()
+        while not self.exchange():
+            pass
+
+        print("Beginning sensor loop.")
 
         while True:
             d = self.bus.read_i2c_block_data(self.addr, 48)
@@ -77,13 +101,15 @@ class Node:
                 data = s.function(d[s.place])
                 print((self.name + "/" + s.name), data)
                 self.c.publish(self.name + "/" + s.name, data, qos=1)
-            self.c.loop()
             time.sleep(.25)
 
             counter = counter + 1
-            if counter == 20:
+            if counter == 4:
+                print("Sending heartbeat.")
                 random.setstate(self.rng)
                 self.c.publish(f"{self.name}/heartbeat",
                                random.getrandbits(32), qos=2)
                 self.rng = random.getstate()
                 counter = 0
+
+            self.c.loop()

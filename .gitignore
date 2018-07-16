@@ -1,3 +1,4 @@
 Nodes/ca.crt
 .DS_Store
-.vscode/.ropeproject/
+.vscode/
+**/__pycache__/
