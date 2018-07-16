@@ -27,7 +27,7 @@ class Node:
     def __init__(self, name, addr):
         self.name = name
         self.addr = addr
-        # self.bus = SMBus(1)
+        self.bus = SMBus(1)
         self.c = paho.Client("name")
         self.c.tls_set("ca.crt")
         self.c.connect("192.168.4.1", 8883)
