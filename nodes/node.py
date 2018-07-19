@@ -46,7 +46,7 @@ class Node:
 
         self.c.on_message = handler
         self.c.subscribe("server/key")
-        self.c.publish(self.name + "/key", payload=public_key, qos=1)
+        self.c.publish(f"{self.name}/key", payload=public_key, qos=1)
 
         print("Sent my public key: " + str(public_key))
         print("Waiting for their public key...")
@@ -97,30 +97,30 @@ class Node:
                 try:
                     d = bw.read_i2c_block_data(self.addr, 0, len(self.sensors))
                     fails = 0
-                except:
+                except _:
                     fails = fails + 1
                     if fails >= 10:
-                        self.c.publish(self.name + "/heartbeat", -1, qos=2)
-                        print("EXITTING DUE TO I2C ERROR")
+                        self.c.publish(f"{self.name}/heartbeat", -1, qos=2)
+                        print("Exiting due to I2C error.")
                         break
                     pass
 
             for i in self.inputs:
-                r = self.c.subscribe(i.name + "/" + i.topic, qos=1)
+                r = self.c.subscribe(f"{i.name}/{i.topic}", qos=1)
                 v = i.function(r)
                 print("Recieved: ", bytes(v))
+
             for s in self.sensors:
                 data = s.function(d[s.place])
-                print((self.name + "/" + s.name), data)
-                self.c.publish(self.name + "/" + s.name, data, qos=1)
+                print(f"{self.name}/{s.name}", data)
+                self.c.publish(f"{self.name}/{s.name}", data, qos=1)
             time.sleep(.25)
 
             counter = counter + 1
             if counter == 4:
                 print("Sending heartbeat.")
                 random.setstate(self.rng)
-                self.c.publish(self.name + "/heartbeat",
-                               random.getrandbits(32), qos=2)
+                self.c.publish(f"{self.name}/heartbeat", random.getrandbits(32), qos=2)
                 self.rng = random.getstate()
                 counter = 0
 
