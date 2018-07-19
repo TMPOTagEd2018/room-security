@@ -1,9 +1,9 @@
-#include <Wire.h>
+#include <Wire>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_MMA8451.h>
 
 #define ADDR 0x06
-#define DT 250
+#define DT 100
 
 Adafruit_MMA8451 mma = Adafruit_MMA8451();
 
@@ -63,7 +63,7 @@ void loop(){
   Serial.print("Opened: ");
   Serial.println(opened);
 
-  if(buzzing == 1){
+  if(buzzing){
     tone(buzzer, 1000);
   } else {
     noTone(buzzer);
@@ -72,14 +72,12 @@ void loop(){
   delay(DT);
 }
 
-void recv(int){
+void recv(int /*unused*/){
   byte r = Wire.read();
-  if(r == 1){
-    buzzing = 1;
+  if(r==1){
+    buzzing = true;
     Serial.println("BUZZING");
-  } 
-  if(r == 0){
-    if(buzzing == 1){ Serial.println("STOPPED BUZZING"); }
+  }else{
     buzzing = false;
   }
 }
@@ -88,4 +86,3 @@ void send(){
   Wire.write(opened);
   Wire.write(accel);
 }
-
