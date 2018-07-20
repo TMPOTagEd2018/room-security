@@ -3,7 +3,6 @@ import random
 import time
 
 import paho.mqtt.client as paho
-import smbus2
 
 
 class Sensor:
@@ -24,13 +23,18 @@ class Node:
     inputs = []
     sensors = []
 
-    def __init__(self, name, addr):
+    def __init__(self, name, addr, dummy=False):
         self.name = name
         self.addr = addr
-        self.bus = smbus2.SMBus(1)
+        self.dummy = dummy
+
+        if not dummy:
+            import smbus2
+            self.bus = smbus2.SMBus(1)
+
         self.c = paho.Client(str(name))
         self.c.tls_set("ca.crt")
-        self.c.connect("192.168.4.1", 8883)
+        self.c.connect("10.90.12.213", 8883)
 
     def exchange(self):
         print("Initiating key exchange.")
@@ -93,27 +97,30 @@ class Node:
         print("Beginning sensor loop.")
 
         while True:
-            with smbus2.SMBusWrapper(1) as bw:
-                try:
-                    d = bw.read_i2c_block_data(self.addr, 0, len(self.sensors))
-                    fails = 0
-                except _:
-                    fails = fails + 1
-                    if fails >= 10:
-                        self.c.publish(f"{self.name}/heartbeat", -1, qos=2)
-                        print("Exiting due to I2C error.")
-                        break
-                    pass
+            if not self.dummy:
+                import smbus2
+                with smbus2.SMBusWrapper(1) as bw:
+                    try:
+                        d = bw.read_i2c_block_data(self.addr, 0, len(self.sensors))
+                        fails = 0
+                    except:
+                        fails = fails + 1
+                        if fails >= 10:
+                            self.c.publish(f"{self.name}/heartbeat", -1, qos=2)
+                            print("Exiting due to I2C error.")
+                            break
+                        pass
 
-            for i in self.inputs:
-                r = self.c.subscribe(f"{i.name}/{i.topic}", qos=1)
-                v = i.function(r)
-                print("Recieved: ", bytes(v))
+                for i in self.inputs:
+                    r = self.c.subscribe(f"{i.name}/{i.topic}", qos=1)
+                    v = i.function(r)
+                    print("Recieved: ", bytes(v))
 
-            for s in self.sensors:
-                data = s.function(d[s.place])
-                print(f"{self.name}/{s.name}", data)
-                self.c.publish(f"{self.name}/{s.name}", data, qos=1)
+                for s in self.sensors:
+                    data = s.function(d[s.place])
+                    print(f"{self.name}/{s.name}", data)
+                    self.c.publish(f"{self.name}/{s.name}", data, qos=1)
+
             time.sleep(.25)
 
             counter = counter + 1
