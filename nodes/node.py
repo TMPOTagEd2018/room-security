@@ -3,31 +3,24 @@ import random
 import time
 
 import paho.mqtt.client as paho
-import smbus2
+import serial
 
 
-class Sensor:
-    def __init__(self, n, p, f):
-        self.name = n
-        self.place = p
-        self.function = f
-
-
-class Input:
-    def __init__(self, n, t, f):
+class MQTT_Input:
+    name: str = ""
+    topic: str = ""
+    def __init__(self, n, t):
         self.name = n
         self.topic = t
-        self.function = f
 
 
 class Node:
     inputs = []
-    sensors = []
 
     def __init__(self, name, addr):
         self.name = name
         self.addr = addr
-        self.bus = smbus2.SMBus(1)
+        self.ser = serial.Serial(115200)
         self.c = paho.Client(str(name))
         self.c.tls_set("ca.crt")
         self.c.connect("192.168.4.1", 8883)
@@ -77,11 +70,8 @@ class Node:
 
         return True
 
-    def register(self, sensor, place, transform):
-        self.sensors.append(Sensor(sensor, place, transform))
-
-    def pipe(self, name, topic, pipeline):
-        self.inputs.append(Input(name, topic, pipeline))
+    def input(name, topic)
+        self.inputs.append(MQTT_Input(name, topic))
 
     def start(self):
         counter = 0
@@ -93,31 +83,18 @@ class Node:
         print("Beginning sensor loop.")
 
         while True:
-            with smbus2.SMBusWrapper(1) as bw:
-                try:
-                    d = bw.read_i2c_block_data(self.addr, 0, len(self.sensors))
-                    fails = 0
-                except _:
-                    fails = fails + 1
-                    if fails >= 10:
-                        self.c.publish(f"{self.name}/heartbeat", -1, qos=2)
-                        print("Exiting due to I2C error.")
-                        break
-                    pass
-
+            rec = self.ser.readline()
             for i in self.inputs:
-                r = self.c.subscribe(f"{i.name}/{i.topic}", qos=1)
-                v = i.function(r)
+                mes = self.c.subscribe(f"{i.name}/{i.topic}", qos=1)
+                ser.write(f"{i.topic}: {mes}")
                 print("Recieved: ", bytes(v))
 
-            for s in self.sensors:
-                data = s.function(d[s.place])
-                print(f"{self.name}/{s.name}", data)
-                self.c.publish(f"{self.name}/{s.name}", data, qos=1)
-            time.sleep(.25)
+            name, data = rec.split(":")
+            print(f"{self.name}/{name}", int(data))
+            self.c.publish(f"{self.name}/{name}", int(data), qos=1)
 
             counter = counter + 1
-            if counter == 4:
+            if counter == 10:
                 print("Sending heartbeat.")
                 random.setstate(self.rng)
                 self.c.publish(f"{self.name}/heartbeat", random.getrandbits(32), qos=2)

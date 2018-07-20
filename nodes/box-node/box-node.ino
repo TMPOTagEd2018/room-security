@@ -1,8 +1,7 @@
-#include <Wire>
+#include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_MMA8451.h>
 
-#define ADDR 0x06
 #define DT 100
 
 Adafruit_MMA8451 mma = Adafruit_MMA8451();
@@ -10,7 +9,7 @@ Adafruit_MMA8451 mma = Adafruit_MMA8451();
 const int buzzer = 2;
 const int in = 13;
 
-int buzzing = -1;
+bool buzzing = false;
 int opened = 0;
 int accel = 0;
 
@@ -19,10 +18,6 @@ void setup(void){
   delay(2000);
   Serial.println();
   Serial.println("Starting box node");
-
-  Wire.begin(ADDR);
-  Wire.onReceive(recv);
-  Wire.onRequest(send);
 
   if(!mma.begin()){
     Serial.println("ACCEL NOT FOUND");
@@ -63,6 +58,11 @@ void loop(){
   Serial.print("Opened: ");
   Serial.println(opened);
 
+  if (Serial.available() > 0) {
+    char* rec = Serial.readString();
+    
+  }
+
   if(buzzing){
     tone(buzzer, 1000);
   } else {
@@ -70,19 +70,4 @@ void loop(){
   }
   
   delay(DT);
-}
-
-void recv(int /*unused*/){
-  byte r = Wire.read();
-  if(r==1){
-    buzzing = true;
-    Serial.println("BUZZING");
-  }else{
-    buzzing = false;
-  }
-}
-
-void send(){
-  Wire.write(opened);
-  Wire.write(accel);
 }

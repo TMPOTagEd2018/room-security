@@ -5,7 +5,7 @@
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 
 #define ADDR 0x06
-#define DT 100
+#define DT 250
 
 const int in = 2;
 
@@ -27,7 +27,7 @@ void setup(){
 
   if(!tsl.begin()){
     Serial.println("No lux sensor found");
-    while(1);
+    while (1);
   }
   Serial.println("lux sensor found");
 
