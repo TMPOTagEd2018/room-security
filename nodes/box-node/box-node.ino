@@ -45,20 +45,11 @@ void loop(){
   sensors_event_t e;
   mma.getEvent(&e);
 
-  accel = sqrt(pow(e.acceleration.x, 2) + pow(e.acceleration.y, 2) + pow(e.acceleration.z, 2)) - 9;
-  opened = (digitalRead(in)) ? 1 : 0;
-
-  accel = constrain(accel, -127, 127);
-
   Serial.print("accel:");
-  if(byte(accel) > 128){
-    Serial.println((byte)accel - 256);
-  } else {
-    Serial.println(byte(accel));
-  }
-  
+  Serial.println(e.acceleration.z);
+
   Serial.print("contact:");
-  Serial.println(opened);
+  Serial.println((digitalRead(in)) ? 1 : 0);
 
   //if (Serial.available() > 0) {
   //  char* rec = Serial.readString();

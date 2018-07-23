@@ -12,7 +12,8 @@ const int in = 13;
 int opened = 0;
 int accel = 0;
 
-void setup(void){
+void setup(void)
+{
   Serial.begin(115200);
   delay(2000);
   Serial.println();
@@ -21,39 +22,37 @@ void setup(void){
   Wire.begin(ADDR);
   Wire.onRequest(send);
 
-  if(!mma.begin()){
+  if (!mma.begin())
+  {
     Serial.println("- Accelerometer not found.");
-    while(1);
+    while (1)
+      ;
   }
   Serial.println("- Accelerometer found.");
 
   mma.setRange(MMA8451_RANGE_2_G);
-  
-  Serial.print("- Range = "); Serial.print(2 << mma.getRange());  
+
+  Serial.print("- Range = ");
+  Serial.print(2 << mma.getRange());
   Serial.println("G");
 
   pinMode(in, INPUT);
- 
+
   Serial.print("- I2C opening on addr: ");
   Serial.println(ADDR);
   Serial.println("- Ready.");
 }
 
-void loop(){
+void loop()
+{
   sensors_event_t e;
   mma.getEvent(&e);
 
-  accel = pow(e.acceleration.z, 10);
+  accel = pow(, 10);
   opened = (digitalRead(in)) ? 1 : 0;
 
-  accel = constrain(accel, -127, 127);
-
   Serial.print("accel:");
-  if(byte(accel) > 128){
-    Serial.println((byte)accel - 256);
-  } else {
-    Serial.println(byte(accel));
-  }
+  Serial.println(e.acceleration.z);
 
   Serial.print("contact:");
   Serial.println(opened);
@@ -61,7 +60,8 @@ void loop(){
   delay(DT);
 }
 
-void send(){
+void send()
+{
   Wire.write(opened);
   Wire.write(accel);
 }

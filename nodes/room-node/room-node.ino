@@ -55,13 +55,10 @@ void loop(){
   sensors_event_t event;
   tsl.getEvent(&event);
 
-  lux = constrain((int) event.light, 0, 255);
-  move = (digitalRead(in)) ? 1 : 0;
-
   Serial.print("lux:");
-  Serial.println(lux);
+  Serial.println(event.light);
   Serial.print("pir:");
-  Serial.println(move);
+  Serial.println((digitalRead(in)) ? 1 : 0);
   
   delay(DT);
 }
