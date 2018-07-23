@@ -1,4 +1,4 @@
 from node import Node
 
-room = Node("room", 0x06)
+room = Node("room", "/dev/ttyACM0")
 room.start()

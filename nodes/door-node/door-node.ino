@@ -16,27 +16,27 @@ void setup(void){
   Serial.begin(115200);
   delay(2000);
   Serial.println();
-  Serial.println("Starting door node");
+  Serial.println("- Starting door node.");
 
   Wire.begin(ADDR);
   Wire.onRequest(send);
 
   if(!mma.begin()){
-    Serial.println("ACCEL NOT FOUND");
+    Serial.println("- Accelerometer not found.");
     while(1);
   }
-  Serial.println("Accel found!");
+  Serial.println("- Accelerometer found.");
 
   mma.setRange(MMA8451_RANGE_2_G);
   
-  Serial.print("Range = "); Serial.print(2 << mma.getRange());  
+  Serial.print("- Range = "); Serial.print(2 << mma.getRange());  
   Serial.println("G");
 
   pinMode(in, INPUT);
  
-  Serial.print("I2c opening on addr: ");
+  Serial.print("- I2C opening on addr: ");
   Serial.println(ADDR);
-  Serial.println("Ready ...");
+  Serial.println("- Ready.");
 }
 
 void loop(){
@@ -48,18 +48,16 @@ void loop(){
 
   accel = constrain(accel, -127, 127);
 
-  Serial.print("Acceleration: ");
-  Serial.print(accel);
-  Serial.print(", ");
+  Serial.print("accel:");
   if(byte(accel) > 128){
     Serial.println((byte)accel - 256);
   } else {
     Serial.println(byte(accel));
   }
-  Serial.print("Opened: ");
+
+  Serial.print("contact:");
   Serial.println(opened);
 
-  
   delay(DT);
 }
 
@@ -67,4 +65,3 @@ void send(){
   Wire.write(opened);
   Wire.write(accel);
 }
-

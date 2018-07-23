@@ -13,11 +13,14 @@ int lux = 0;
 int move = 0;
 
 void setup(){
+  // lines that the RPi must ignore start with a dash
+  // like comments
+  
   Serial.begin(115200);
   delay(2000);
   Serial.println();
 
-  Serial.println("Starting Room Node");
+  Serial.println("- Starting Room Node");
   
   Wire.begin(ADDR);
   Wire.onReceive(recv);
@@ -26,24 +29,25 @@ void setup(){
   pinMode(in, INPUT);
 
   if(!tsl.begin()){
-    Serial.println("No lux sensor found");
+    Serial.println("- No lux sensor found");
     while (1);
   }
-  Serial.println("lux sensor found");
+  
+  Serial.println("- Lux sensor found");
 
   configureSensor();
 
-  Serial.print("I2c opening on addr: ");
+  Serial.print("- I2C opening on addr: ");
   Serial.println(ADDR);
-  Serial.println("Ready ...");
+  Serial.println("- Ready ...");
 }
 
 void configureSensor(void){
   tsl.enableAutoRange(true);
   tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);
   Serial.println("------------------------------------");
-  Serial.print  ("Gain:         "); Serial.println("Auto");
-  Serial.print  ("Timing:       "); Serial.println("13 ms");
+  Serial.print  ("- Gain:         "); Serial.println("Auto");
+  Serial.print  ("- Timing:       "); Serial.println("13 ms");
   Serial.println("------------------------------------");
 }
 
@@ -54,9 +58,9 @@ void loop(){
   lux = constrain((int) event.light, 0, 255);
   move = (digitalRead(in)) ? 1 : 0;
 
-  Serial.print("Lux: ");
+  Serial.print("lux:");
   Serial.println(lux);
-  Serial.print("PIR: ");
+  Serial.print("pir:");
   Serial.println(move);
   
   delay(DT);

@@ -6,22 +6,13 @@ import paho.mqtt.client as paho
 import serial
 
 
-class MQTT_Input:
-    name: str = ""
-    topic: str = ""
-
-    def __init__(self, n, t):
-        self.name = n
-        self.topic = t
-
-
 class Node:
     inputs = []
 
     def __init__(self, name, addr, dummy=False):
         self.name = name
         self.addr = addr
-        self.ser = serial.Serial(115200)
+        self.ser = serial.Serial(addr, 115200)
         self.c = paho.Client(str(name))
         self.c.tls_set("ca.crt")
         self.c.connect("10.90.12.213", 8883)
@@ -72,7 +63,7 @@ class Node:
         return True
 
     def input(self, name, topic):
-        self.inputs.append(MQTT_Input(name, topic))
+        self.inputs.append(f"{name}/{topic}")
 
     def start(self):
         counter = 0
@@ -82,15 +73,21 @@ class Node:
 
         print("Beginning sensor loop.")
 
-        while True:
-            rec = self.ser.readline()
-            for i in self.inputs:
-                mes = self.c.subscribe(f"{i.name}/{i.topic}", qos=1)
-                self.ser.write(f"{i.topic}: {mes}")
+        for input in self.inputs:
+            self.c.subscribe(input, qos=1)
 
-            name, data = rec.split(":")
-            print(f"{self.name}/{name}", int(data))
-            self.c.publish(f"{self.name}/{name}", int(data), qos=1)
+        def input_handler(client, data, message: paho.MQTTMessage):
+            self.ser.writeline(f"{message.topic}:{message.payload.decode()}")
+
+        self.c.on_message = input_handler
+
+        while True:
+            rec = self.ser.readline().decode().strip()
+
+            if ":" in rec and not rec.startswith("-"):
+                name, data = rec.split(":")
+                print(f"{self.name}/{name}", data)
+                self.c.publish(f"{self.name}/{name}", int(data), qos=1)
 
             counter = counter + 1
             if counter == 10:
