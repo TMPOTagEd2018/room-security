@@ -33,8 +33,7 @@ void setup(void){
   Serial.println("G");
 
   pinMode(in, INPUT);
-  pinMode(buzzer, OUTPUT);
-
+ 
   Serial.print("I2c opening on addr: ");
   Serial.println(ADDR);
   Serial.println("Ready ...");
@@ -44,7 +43,7 @@ void loop(){
   sensors_event_t e;
   mma.getEvent(&e);
 
-  accel = sqrt(pow(e.acceleration.x, 2) + pow(e.acceleration.y, 2) + pow(e.acceleration.z, 2)) - 9;
+  accel = pow(e.acceleration.z, 10);
   opened = (digitalRead(in)) ? 1 : 0;
 
   accel = constrain(accel, -127, 127);
@@ -60,11 +59,6 @@ void loop(){
   Serial.print("Opened: ");
   Serial.println(opened);
 
-  if(buzzing == 1){
-    tone(buzzer, 1000);
-  } else {
-    noTone(buzzer);
-  }
   
   delay(DT);
 }
