@@ -9,13 +9,32 @@ import serial
 class Node:
     inputs = []
 
-    def __init__(self, name, addr, dummy=False):
+    def __init__(self, name, addr):
         self.name = name
-        self.addr = addr
-        self.ser = serial.Serial(addr, 115200)
-        self.c = paho.Client(str(name))
-        self.c.tls_set("ca.crt")
-        self.c.connect("10.90.12.213", 8883)
+        self.serial = serial.Serial(addr, 115200)
+        self.client = paho.Client(str(name))
+        self.client.tls_set("ca.crt")
+        self.client.connect("192.168.4.1", 8883)
+        self.client.subscribe("server/init")
+        self.client.on_message = self.handler
+        self.started = False
+        self.server_key = None
+
+        print(f"Node {name} initialized. Listening on {addr}")
+
+    def handler(self, client: paho.Client, rc, message: paho.MQTTMessage):
+        if message.topic == "server/init" and self.started:
+            # server just restarted, exchange keys again so it doesn't ignore us
+            print("Server/init received.")
+
+            self.server_key = None
+            self.exchange()
+
+        elif message.topic == "server/key":
+            self.server_key = int(message.payload.decode())
+
+        elif self.started:
+            self.serial.writeline(f"{message.topic}:{message.payload.decode()}")
 
     def exchange(self):
         print("Initiating key exchange.")
@@ -23,36 +42,28 @@ class Node:
         dh = keyex.DiffieHellman()
 
         public_key = dh.gen_public_key()
-        server_public_key = None
 
-        def handler(client, data, message: paho.MQTTMessage):
-            nonlocal server_public_key
-            server_public_key = message.payload.decode()
-
-        self.c.on_message = handler
-        self.c.subscribe("server/key")
-        self.c.publish(f"{self.name}/key", payload=public_key, qos=1)
+        self.client.subscribe("server/key")
+        self.client.publish(f"{self.name}/key", payload=public_key, qos=1)
 
         print("Sent my public key: " + str(public_key))
         print("Waiting for their public key...")
 
         start_time = time.time()
 
-        while server_public_key is None:
-            self.c.loop()
+        while self.server_key is None:
+            self.client.loop()
 
             if time.time() - start_time >= 30:
                 print("Key exchange timed out.")
                 return False
 
-        server_public_key = int(server_public_key)
+        print("Received server public key: " + str(self.server_key))
 
-        print("Received server public key: " + str(server_public_key))
+        self.client.on_message = None
+        self.client.unsubscribe("server/key")
 
-        self.c.on_message = None
-        self.c.unsubscribe("server/key")
-
-        sk = dh.gen_shared_key(server_public_key)
+        sk = dh.gen_shared_key(self.server_key)
 
         print("Key exchange completed with server, shared key " + sk)
 
@@ -67,6 +78,7 @@ class Node:
 
     def start(self):
         counter = 0
+        self.started = True
 
         while not self.exchange():
             pass
@@ -74,28 +86,23 @@ class Node:
         print("Beginning sensor loop.")
 
         for input in self.inputs:
-            self.c.subscribe(input, qos=1)
-
-        def input_handler(client, data, message: paho.MQTTMessage):
-            self.ser.writeline(f"{message.topic}:{message.payload.decode()}")
-
-        self.c.on_message = input_handler
+            self.client.subscribe(input, qos=1)
 
         while True:
-            rec = self.ser.readline().decode().strip()
+            rec = self.serial.readline().decode().strip()
 
             if ":" in rec and not rec.startswith("-"):
                 name, data = rec.split(":")
                 print(f"{self.name}/{name}", data)
-                self.c.publish(f"{self.name}/{name}", int(data), qos=1)
+                self.client.publish(f"{self.name}/{name}", int(data), qos=1)
 
             counter = counter + 1
             if counter == 10:
                 print("Sending heartbeat.")
                 random.setstate(self.rng)
-                self.c.publish(f"{self.name}/heartbeat",
+                self.client.publish(f"{self.name}/heartbeat",
                                random.getrandbits(32), qos=2)
                 self.rng = random.getstate()
                 counter = 0
 
-            self.c.loop()
+            self.client.loop()
