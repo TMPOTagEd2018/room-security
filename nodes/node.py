@@ -4,6 +4,8 @@ import time
 
 import paho.mqtt.client as paho
 import serial
+import queue
+import threading
 
 
 class Node:
@@ -11,6 +13,7 @@ class Node:
 
     def __init__(self, name, addr):
         self.name = name
+
         self.serial = serial.Serial(addr, 115200)
         self.client = paho.Client(str(name))
         self.client.tls_set("ca.crt")
@@ -34,7 +37,8 @@ class Node:
             self.server_key = int(message.payload.decode())
 
         elif self.started:
-            self.serial.writeline(f"{message.topic}:{message.payload.decode()}")
+            self.serial.writeline(
+                f"{message.topic}:{message.payload.decode()}")
 
     def exchange(self):
         print("Initiating key exchange.")
@@ -88,20 +92,33 @@ class Node:
         for input in self.inputs:
             self.client.subscribe(input, qos=1)
 
-        while True:
-            rec = self.serial.readline().decode().strip()
+        lines = queue.Queue()
 
+        def loop(serial: serial.Serial, queue: queue.Queue):
+            rec = self.serial.readline().decode().strip()
             if ":" in rec and not rec.startswith("-"):
                 name, data = rec.split(":")
+                lines.put((name, data))
+
+        loop_thread = threading.Thread(target=loop, args=(self.serial, lines))
+        loop_thread.daemon = True
+        loop_thread.start()
+
+        while True:
+            try:
+                name, data = lines.get_nowait()
                 print(f"{self.name}/{name}", data)
                 self.client.publish(f"{self.name}/{name}", int(data), qos=1)
+            except queue.Empty:
+                time.sleep(0.1)
+                pass
 
             counter = counter + 1
             if counter == 10:
                 print("Sending heartbeat.")
                 random.setstate(self.rng)
-                self.client.publish(f"{self.name}/heartbeat",
-                               random.getrandbits(32), qos=2)
+                self.client.publish(
+                    f"{self.name}/heartbeat", random.getrandbits(32), qos=2)
                 self.rng = random.getstate()
                 counter = 0
 
