@@ -14,6 +14,17 @@ bool buzzing = false;
 int opened = 0;
 int accel = 0;
 
+void recv(int /*unused*/){
+  byte r = Wire.read();
+  if(r==1){
+    buzzing = true;
+    Serial.println("BUZZING");
+  }else if (r==254){
+    buzzing = false;
+  }
+  Serial.write(r);
+}
+
 void setup(void){
   Serial.begin(115200);
   delay(2000);
@@ -21,7 +32,7 @@ void setup(void){
   Serial.println("- Starting box node. ");
 
   Wire.begin(ADDR);
-  Wire.onRecieve(recv);
+  Wire.onReceive(recv);
 
   if(!mma.begin()){
     Serial.println("- Accelerometer not found. ");
@@ -49,13 +60,18 @@ void loop(){
   mma.getEvent(&e);
 
   Serial.print("accel:");
-  Serial.println(e.acceleration.z);
+  Serial.println(sqrt(sq(e.acceleration.x) + sq(e.acceleration.y)));
 
   Serial.print("contact:");
   Serial.println((digitalRead(in)) ? 1 : 0);
 
   if (Serial.available() > 0) {
-   char* rec = Serial.readString();
+   String rec = Serial.readString();
+   if(rec == "server/alarm:1") {
+    buzzing = true;
+   } else if(rec == "server/alarm:0") {
+    buzzing = false;
+   }
   }
 
   if(buzzing){
@@ -67,12 +83,4 @@ void loop(){
   delay(DT);
 }
 
-void recv(int /*unused*/){
-  byte r = Wire.read();
-  if(r==1){
-    buzzing = true;
-    Serial.println("BUZZING");
-  }else{
-    buzzing = false;
-  }
-}
+

@@ -13,7 +13,7 @@ def abbrev(key: int):
 
 
 class Node:
-    inputs = {}
+    inputs = []
 
     def __init__(self, name, addr):
         self.name = name
@@ -59,12 +59,9 @@ class Node:
             except:
                 pass
 
-        elif self.started and message.topic in self.inputs.keys():
-            code = self.inputs[message.topic]
-            if message.payload.decode() == "1":
-                self.serial.write(bytes([code]))
-            else:
-                self.serial.write(bytes([~code & 0xFF]))
+        elif self.started and message.topic in self.inputs:
+            self.serial.writelines(
+                [f"{message.topic}:{message.payload.decode()}"])
 
     def exchange(self):
         print("initiating key exchange.")
@@ -123,7 +120,8 @@ class Node:
                     else:
                         lines.put(tuple(line))
 
-        serial_thread = threading.Thread(target=serial_read, args=(self.serial, lines))
+        serial_thread = threading.Thread(
+            target=serial_read, args=(self.serial, lines))
         serial_thread.daemon = True
         serial_thread.start()
 
@@ -143,7 +141,8 @@ class Node:
             if i == 10:
                 # print("sending heartbeat.")
                 random.setstate(self.rng)
-                self.client.publish(f"{self.name}/heartbeat", random.getrandbits(32), qos=2)
+                self.client.publish(
+                    f"{self.name}/heartbeat", random.getrandbits(32), qos=2)
                 self.rng = random.getstate()
                 i = 0
 
