@@ -13,12 +13,12 @@ def abbrev(key: int):
 
 
 class Node:
-    inputs = []
+    inputs = {}
 
     def __init__(self, name, addr):
         self.name = name
 
-        print(f"Node {name} initialized. Listening on {addr}.")
+        print(f"node {name} initialized. Listening on {addr}.")
 
         self.serial = serial.Serial(addr, 115200)
 
@@ -31,7 +31,7 @@ class Node:
         self.client.connect("192.168.4.1", 8883)
         self.client.loop_start()
 
-        print(f"Connected to server at 192.168.4.1.")
+        print(f"connected to server at 192.168.4.1.")
 
         self.started = False
         self.server_key = None
@@ -41,7 +41,7 @@ class Node:
         print("subscribed to server/init")
         self.client.subscribe("server/key", qos=2)
         print("subscribed to server/key")
-        for i in self.inputs:
+        for i in self.inputs.keys():
             self.client.subscribe(i, qos=1)
             print("subscribed to server/key", i)
 
@@ -59,8 +59,12 @@ class Node:
             except:
                 pass
 
-        elif self.started:
-            self.serial.writeline(f"{message.topic}:{message.payload.decode()}")
+        elif self.started and message.topic in self.inputs.keys():
+            code = self.inputs[message.topic]
+            if message.payload.decode() == "1":
+                self.serial.write(bytes([code]))
+            else:
+                self.serial.write(bytes([~code & 0xFF]))
 
     def exchange(self):
         print("initiating key exchange.")
@@ -71,8 +75,8 @@ class Node:
 
         self.client.publish(f"{self.name}/key", payload=public_key, qos=1)
 
-        print("sent my public key: " + abbrev(public_key))
-        print("waiting for server public key...")
+        print("sent my public key: " + str(public_key))
+        print("waiting for their public key...")
 
         start_time = time.time()
 
@@ -95,8 +99,8 @@ class Node:
 
         return True
 
-    def input(self, name, topic):
-        self.inputs.append(f"{name}/{topic}")
+    def input(self, name: str, topic: str, code: int):
+        self.inputs[f"{name}/{topic}"] = code
 
     def start(self):
         i, j = 0, 0

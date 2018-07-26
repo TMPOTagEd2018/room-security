@@ -20,6 +20,9 @@ void setup(void){
   Serial.println();
   Serial.println("- Starting box node. ");
 
+  Wire.begin(ADDR);
+  Wire.onRecieve(recv);
+
   if(!mma.begin()){
     Serial.println("- Accelerometer not found. ");
     while(1);
@@ -51,9 +54,9 @@ void loop(){
   Serial.print("contact:");
   Serial.println((digitalRead(in)) ? 1 : 0);
 
-  //if (Serial.available() > 0) {
-  //  char* rec = Serial.readString();
-  //}
+  if (Serial.available() > 0) {
+   char* rec = Serial.readString();
+  }
 
   if(buzzing){
     tone(buzzer, 1000);
@@ -62,4 +65,14 @@ void loop(){
   }
   
   delay(DT);
+}
+
+void recv(int /*unused*/){
+  byte r = Wire.read();
+  if(r==1){
+    buzzing = true;
+    Serial.println("BUZZING");
+  }else{
+    buzzing = false;
+  }
 }
